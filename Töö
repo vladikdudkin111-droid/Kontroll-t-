@@ -1,0 +1,140 @@
+CREATE DATABASE kunstigalerii;
+USE kunstigalerii;
+
+CREATE TABLE galeriid (
+	galeriid_id INT IDENTITY PRIMARY KEY,
+	nimi VARCHAR(100) NOT NULL,
+	aadress VARCHAR(150),
+	telefon VARCHAR(30),
+	email VARCHAR(100)
+);
+
+CREATE TABLE kunstnikud (
+	kunstnik_id INT IDENTITY PRIMARY KEY,
+	eesnimi VARCHAR(50),
+	perekonnanimi VARCHAR(50),
+	sunniaasta INT,
+	rahvus VARCHAR(50),
+	elulugu TEXT
+);
+
+CREATE TABLE teosed (
+	teosed_id INT IDENTITY PRIMARY KEY,
+	kunstnik_id INT,
+	pealkiri VARCHAR(100),
+	loomise_aasta INT,
+	tehnika VARCHAR(100),
+	mootmed VARCHAR(50),
+	olek VARCHAR(50),
+	FOREIGN KEY (kunstnik_id) REFERENCES kunstnikud(kunstnik_id)
+);
+
+CREATE TABLE naitused (
+	naitus_id INT IDENTITY PRIMARY KEY,
+	galerii_id INT,
+	pealkiri VARCHAR(100),
+	alguskuupaev DATE,
+	loppkuupaev DATE,
+	kuraator VARCHAR(100),
+	kirjeldus TEXT,
+	FOREIGN KEY (galerii_id) REFERENCES galeriid(galeriid_id)
+);
+
+CREATE TABLE naituse_teosed (
+	naitus_teos_id INT IDENTITY PRIMARY KEY,
+	naitus_id INT,
+	teos_id INT,
+	FOREIGN KEY (naitus_id) REFERENCES naitused(naitus_id),
+	FOREIGN KEY (teos_id) REFERENCES teosed(teosed_id)
+);
+
+INSERT INTO galeriid (nimi, aadress, telefon, email) VALUES
+('Avatud Ruum Tallinn', 'Vabaduse väljak 1, Tallinn', '+37254643526', 'tallinn@gmail.com'),
+('Avatud Ruum Tartu', 'Hellerheina tee 1, Tartu', '+37254643527', 'tartu@gmail.com'),
+('Avatud Ruum Pärnu', 'Niisu 1, Pärnu', '+37254643528', 'parnu@gmail.com'),
+('Avatud Ruum Narva', 'Peetri 1, Narva', '+37254643529', 'narva@gmail.com'),
+('Avatud Ruum Maardu', 'Veeru 6, Maardu', '+37254643521', 'maardu@gmail.com');
+
+INSERT INTO kunstnikud (eesnimi, perekonnanimi, sunniaasta, rahvus, elulugu) VALUES
+('Nikita', 'Kuznets',2000, 'venelane', 'Maalikunstnik Tallinnast.'),
+('Liis', 'Saar', 1982, 'eestlane', 'Abstraktse kunsti viljeleja.'),
+('Dima', 'Buda', 1990, 'eestlane', 'Kaasaegne kunsti autor'),
+('Jaan', 'Kask', 1999, 'eestlane', 'Illustraator'),
+('Mark', 'Kolpak', 1983, 'venelane', 'Skulptor');
+
+INSERT INTO teosed (kunstnik_id, pealkiri, loomise_aasta, tehnika, mootmed, olek) VALUES
+(1, 'Vaikne hommik', 2020, 'õli lõuendil', '80x60 cm', 'saadaval'),
+(2, 'Valgus', 2018, 'skulptuur', '120x50 cm', 'müüdud'),
+(3, 'Linn öös', 2020, 'värveline', '100x70 cm', 'müüdud'),
+(4, 'Sinine ruum', 2016, 'mõistlik', '90x90 cm', 'saadaval'), 
+(5, 'Joonte mäng', 2019, 'mehaniline', '50x40 cm', 'saadaval');
+
+INSERT INTO naitused (galerii_id, pealkiri, alguskuupaev, loppkuupaev, kuraator, kirjeldus) VALUES
+(1, 'Kevadine valgus', '2024.03.01', '2024.04.15', 'Kati Lepp', 'Kevad'),
+(2, 'Kaasaegne vorm', '2024.05.10', '2024.06.20', 'Märt Oja', 'Kaasaegne'),
+(3, 'Öised linnad', '2024.07.01', '2024.10.12', 'Eva Rand', 'Lind'),
+(4, 'Abstrakne', '2024.09.05', '2024.12.01', 'Liina Org', 'Abstrakt'),
+(5, 'Graafika', '2024.10.11', '2024.11.11', 'Priit Kivi', 'Ilustratsiooon');
+
+INSERT INTO naituse_teosed (naitus_id, teos_id) VALUES
+(1, 1),
+(1, 4),
+(2, 2),
+(3, 3),
+(5, 5);
+
+CREATE PROCEDURE naita_kunstniku_teosed
+    @kunstniku_id INT
+AS
+BEGIN
+    SELECT
+        k.eesnimi,
+        k.perekonnanimi,
+        t.pealkiri,
+        t.loomise_aasta,
+        t.tehnika
+    FROM kunstnikud k
+    JOIN teosed t
+        ON k.kunstnik_id = t.kunstnik_id
+    WHERE k.kunstnik_id = @kunstniku_id;
+END;
+
+EXEC naita_kunstniku_teosed 1;
+DROP PROCEDURE naita_kunstniku_teosed;
+
+SELECT
+	t.pealkiri,
+	k.eesnimi,
+	k.perekonnanimi,
+	t.loomise_aasta,
+	t.tehnika
+FROM teosed t
+JOIN kunstnikud k ON t.kunstnik_id = k.kunstnik_id;
+
+SELECT
+	n.pealkiri AS naitus,
+	g.nimi AS galerii,
+	g.aadress,
+	n.alguskuupaev,
+	n.loppkuupaev,
+	n.kuraator
+FROM naitused n
+JOIN galeriid g ON n.galerii_id = g.galeriid_id;
+
+SELECT
+	n.pealkiri AS Naitus,
+	t.pealkiri AS Teos,
+	k.eesnimi,
+	k.perekonnanimi,
+	g.nimi AS Galerii
+FROM naituse_teosed nt
+JOIN naitused n
+ON nt.naitus_teos_id = n.naitus_id
+JOIN teosed t
+ON nt.teos_id = t.teosed_id
+JOIN kunstnikud k
+ON t.kunstnik_id = k.kunstnik_id
+JOIN galeriid g
+ON n.galerii_id = g.galeriid_id;
+
+
